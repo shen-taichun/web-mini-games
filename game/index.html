@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>遊戲大廳 - 經典益智與電玩遊樂中心</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Noto+Sans+TC:wght@400;600;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'sans-serif'],
+            serif: ['"Noto Serif TC"', 'serif'],
+            scifi: ['"Chakra Petch"', 'sans-serif'],
+          },
+          colors: {
+            arcade: {
+              gold: '#F59E0B',
+              cyan: '#06B6D4',
+              pink: '#EC4899',
+              emerald: '#10B981',
+              dark: '#0A0E1A',
+              card: '#121826',
+            }
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 25px rgba(6, 182, 212, 0.35)',
+            'glow-gold': '0 0 25px rgba(245, 158, 11, 0.35)',
+            'glow-pink': '0 0 25px rgba(236, 72, 153, 0.35)',
+          },
+          animation: {
+            'float': 'float 4s ease-in-out infinite',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* 微網格背景 */
+    .grid-pattern {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-[#070A13] text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black grid-pattern relative overflow-x-hidden"
+      x-data="lobbyApp()"
+      x-init="initAudio()">
+
+  <!-- 背景氛圍光效裝飾球 -->
+  <div class="fixed top-[-15%] left-[20%] w-[50vw] h-[50vw] rounded-full bg-cyan-600/10 blur-[140px] pointer-events-none"></div>
+  <div class="fixed bottom-[-15%] right-[10%] w-[45vw] h-[45vw] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none"></div>
+
+  <!-- 頂部大廳導航列 -->
+  <header class="w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 px-4 py-3 sm:px-8">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      
+      <!-- Logo 品牌標章 -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-amber-500 p-0.5 shadow-glow-cyan">
+          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-xl">
+            🎮
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg sm:text-xl font-black tracking-wider bg-gradient-to-r from-cyan-300 via-white to-amber-300 bg-clip-text text-transparent">
+              創藝遊戲大廳
+            </h1>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
+              ARCADE V1.0
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">免安裝 ‧ 即開即玩 ‧ 繁體中文網頁益智街機</p>
+        </div>
+      </div>
+
+      <!-- 右側資訊與音效控制 -->
+      <div class="flex items-center space-x-3">
+        <button @click="toggleSound()"
+                class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/70 text-cyan-400 active:scale-95 transition"
+                :title="isMuted ? '開啟大廳音效' : '靜音模式'"
+                aria-label="切換音效">
+          <template x-if="!isMuted">
+            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            </svg>
+          </template>
+          <template x-if="isMuted">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+            </svg>
+          </template>
+        </button>
+
+        <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold hidden md:inline-flex items-center">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-ping"></span>
+          2 款遊戲線上運作中
+        </span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 大廳主視覺區 (Hero Section) -->
+  <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full z-10 space-y-10">
+
+    <!-- 標題介紹文案 -->
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700/80 text-xs text-amber-400 font-mono">
+        <span>✨ 精選國學益智與反應挑戰遊戲</span>
+      </div>
+      <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white font-sans">
+        挑選你的遊戲挑戰
+      </h2>
+      <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+        所有遊戲皆採用單一 HTML 與純 Web Audio API 合成音效打造，具備極致反應動效、防呆保護與 RWD 佈局，直接點選即可暢玩！
+      </p>
+    </div>
+
+    <!-- 遊戲展示卡片清單 (Game Cards Grid) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+
+      <!-- ================= 遊戲 1：成語填填看 ================= -->
+      <div class="group bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl hover:border-amber-500/60 hover:shadow-glow-gold transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
+           @mouseenter="playHoverSound()">
+        
+        <!-- 背景流光點綴 -->
+        <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all pointer-events-none"></div>
+
+        <div>
+          <!-- 頂部徽章與序號 -->
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold text-xs flex items-center">
+              <span class="mr-1.5">📜</span> 國學語文 ‧ 益智解謎
+            </span>
+            <span class="text-xs font-mono text-slate-500">GAME // 01</span>
+          </div>
+
+          <!-- 遊戲標題與特色簡介 -->
+          <h3 class="text-2xl font-black font-serif text-slate-100 group-hover:text-amber-300 transition-colors mb-2">
+            成語填填看
+          </h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed mb-5">
+            每局隨機抽取 10 個四字成語，隨機隱藏 1 個關鍵字。具備獨立時間與題號雙血條倒數，答對慶祝煙火、答錯展示成語典故釋義！
+          </p>
+
+          <!-- 遊戲畫面互動預覽視窗 (Interactive Visual Preview) -->
+          <div class="bg-[#0b0f19] border border-slate-700/60 rounded-2xl p-4 sm:p-5 mb-5 shadow-inner relative overflow-hidden group-hover:border-amber-500/40 transition">
+            <!-- 模擬上方雙血條 -->
+            <div class="space-y-1.5 mb-3">
+              <div class="flex justify-between text-[10px] text-amber-300/80 font-mono">
+                <span>時間血條 8.5s</span>
+                <span class="text-cyan-400">進度血條 第 4 / 10 題</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="w-3/4 h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"></div>
+              </div>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="w-2/5 h-full bg-cyan-500 rounded-full shadow-glow-cyan"></div>
+              </div>
+            </div>
+
+            <!-- 模擬題目展示卡 -->
+            <div class="flex justify-center gap-2 sm:gap-3 py-2">
+              <div class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-serif text-xl sm:text-2xl font-bold text-slate-200">
+                一
+              </div>
+              <div class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-amber-500/20 border-2 border-dashed border-amber-400 flex items-center justify-center font-serif text-xl sm:text-2xl font-black text-amber-300 animate-pulse">
+                ？
+              </div>
+              <div class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-serif text-xl sm:text-2xl font-bold text-slate-200">
+                驚
+              </div>
+              <div class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-serif text-xl sm:text-2xl font-bold text-slate-200">
+                人
+              </div>
+            </div>
+
+            <!-- 模擬四個選項按鈕 -->
+            <div class="grid grid-cols-4 gap-1.5 mt-3 text-center">
+              <div class="py-1.5 rounded-lg bg-slate-800/80 text-xs font-serif font-bold text-slate-300 border border-slate-700">鳴</div>
+              <div class="py-1.5 rounded-lg bg-slate-800/80 text-xs font-serif font-bold text-slate-300 border border-slate-700">明</div>
+              <div class="py-1.5 rounded-lg bg-slate-800/80 text-xs font-serif font-bold text-slate-300 border border-slate-700">名</div>
+              <div class="py-1.5 rounded-lg bg-slate-800/80 text-xs font-serif font-bold text-slate-300 border border-slate-700">銘</div>
+            </div>
+          </div>
+
+          <!-- 功能特色標籤 -->
+          <div class="flex flex-wrap gap-1.5 mb-6">
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">雙血條獨立</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">鍵盤快速鍵 1~4</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">典故釋義彈窗</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">滿分100分</span>
+          </div>
+        </div>
+
+        <!-- 前往遊戲按鈕 -->
+        <a href="./game1/index.html"
+           @click="playClickSound()"
+           class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black text-base tracking-wider shadow-glow-gold hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center group-hover:scale-[1.01]">
+          <span>進入成語填填看</span>
+          <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </a>
+      </div>
+
+
+      <!-- ================= 遊戲 2：星際打字防衛戰 ================= -->
+      <div class="group bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl hover:border-cyan-500/60 hover:shadow-glow-cyan transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
+           @mouseenter="playHoverSound()">
+        
+        <!-- 背景流光點綴 -->
+        <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all pointer-events-none"></div>
+
+        <div>
+          <!-- 頂部徽章與序號 -->
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-semibold text-xs flex items-center">
+              <span class="mr-1.5">🚀</span> 太空射擊 ‧ 英打挑戰
+            </span>
+            <span class="text-xs font-mono text-slate-500">GAME // 02</span>
+          </div>
+
+          <!-- 遊戲標題與特色簡介 -->
+          <h3 class="text-2xl font-black font-scifi text-slate-100 group-hover:text-cyan-300 transition-colors mb-2">
+            星際打字防衛戰
+          </h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed mb-5">
+            26 個英文字母化身外星機體隨機由天而降，各機速度不一。鍵入正確字母立即發射雷射轟碎！漏接自動蟲洞折返，全數消滅即凱旋結算！
+          </p>
+
+          <!-- 遊戲畫面互動預覽視窗 (Interactive Visual Preview) -->
+          <div class="bg-[#030712] border border-cyan-500/30 rounded-2xl p-4 sm:p-5 mb-5 shadow-inner relative overflow-hidden group-hover:border-cyan-400/50 transition">
+            <!-- 模擬上方 HUD 狀態 -->
+            <div class="flex justify-between items-center text-[10px] text-cyan-400 font-mono mb-3">
+              <span>任務進度：<strong class="text-emerald-400">14 / 26</strong></span>
+              <span class="text-amber-400">剩餘 12 目標</span>
+              <span class="text-pink-400">COMBO x5</span>
+            </div>
+
+            <!-- 模擬戰場畫面：下墜字母與砲台雷射 -->
+            <div class="h-24 sm:h-28 relative rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center overflow-hidden">
+              <!-- 星空點綴 -->
+              <div class="absolute top-2 left-6 w-1 h-1 bg-white rounded-full opacity-60"></div>
+              <div class="absolute top-8 right-10 w-1.5 h-1.5 bg-cyan-300 rounded-full opacity-80"></div>
+              <div class="absolute bottom-5 left-16 w-1 h-1 bg-yellow-200 rounded-full opacity-50"></div>
+
+              <!-- 字母敵機 A (被瞄準) -->
+              <div class="absolute top-3 left-1/4 w-8 h-8 rounded-full bg-slate-900 border-2 border-cyan-400 flex items-center justify-center text-xs font-bold font-scifi text-cyan-200 shadow-glow-cyan animate-pulse">
+                R
+              </div>
+
+              <!-- 字母敵機 B -->
+              <div class="absolute top-6 right-1/4 w-8 h-8 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-xs font-bold font-scifi text-amber-200 shadow-glow-gold">
+                X
+              </div>
+
+              <!-- 字母敵機 C 爆破微粒 -->
+              <div class="absolute top-2 right-10 flex items-center justify-center">
+                <span class="text-sm">💥</span>
+              </div>
+
+              <!-- 砲台與雷射光束 (裝飾) -->
+              <div class="absolute bottom-1 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <div class="w-1.5 h-4 bg-cyan-400 rounded-t shadow-glow-cyan"></div>
+                <div class="w-8 h-4 rounded-t-lg bg-cyan-950 border border-cyan-400 text-[8px] font-mono text-center text-cyan-300">DEF</div>
+              </div>
+            </div>
+
+            <!-- 模擬底部 26 字母狀態雷達 -->
+            <div class="flex justify-center gap-1 mt-3">
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-500 border border-slate-800 line-through">A</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-500 border border-slate-800 line-through">B</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500 animate-pulse">C</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-850 text-slate-400 border border-slate-700">D</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-850 text-slate-400 border border-slate-700">E</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded text-slate-600">...</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-850 text-slate-400 border border-slate-700">Z</span>
+            </div>
+          </div>
+
+          <!-- 功能特色標籤 -->
+          <div class="flex flex-wrap gap-1.5 mb-6">
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">26 字母不漏接</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">雷射瞄準射擊</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">粒子爆破微動效</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800/70 text-[11px] text-slate-300 border border-slate-700/60">KPM 與精準度</span>
+          </div>
+        </div>
+
+        <!-- 前往遊戲按鈕 -->
+        <a href="./game2/index.html"
+           @click="playClickSound()"
+           class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 font-black text-base tracking-wider shadow-glow-cyan hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center group-hover:scale-[1.01]">
+          <span>進入星際打字防衛戰</span>
+          <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- 底部資訊與即將推出提示 (Coming Soon) -->
+    <div class="rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 p-6 text-center max-w-xl mx-auto space-y-2">
+      <div class="text-amber-400 font-bold text-sm flex items-center justify-center">
+        <span class="mr-1.5">⚡</span> 更多新遊戲陸續開發中
+      </div>
+      <p class="text-xs text-slate-500">
+        所有遊戲嚴格遵守 Web Audio API、繁體中文、模組化狀態架構與單一 HTML 規範。
+      </p>
+    </div>
+
+  </main>
+
+  <!-- 頁尾宣告與版權 -->
+  <footer class="w-full border-t border-slate-800/80 py-4 text-center text-xs text-slate-500 z-10 bg-slate-950/80">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>創藝遊戲大廳 ‧ 精選單一檔案網頁遊戲</span>
+      <span class="text-slate-600 font-mono">Tailwind CSS + Alpine.js + Web Audio API</span>
+    </div>
+  </footer>
+
+  <!-- ==================== 核心 JavaScript ==================== -->
+  <script>
+    let audioCtx = null;
+    let isGlobalMuted = false;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function PlaySound(type) {
+      if (isGlobalMuted) return;
+      initAudioContext();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'hover') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.04);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } else if (type === 'click') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+    }
+
+    function lobbyApp() {
+      return {
+        isMuted: false,
+        initAudio() {
+          isGlobalMuted = this.isMuted;
+        },
+        toggleSound() {
+          this.isMuted = !this.isMuted;
+          isGlobalMuted = this.isMuted;
+          if (!this.isMuted) PlaySound('click');
+        },
+        playHoverSound() {
+          PlaySound('hover');
+        },
+        playClickSound() {
+          PlaySound('click');
+        }
+      }
+    }
+  </script>
+</body>
+</html>

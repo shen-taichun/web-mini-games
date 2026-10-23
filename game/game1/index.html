@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>成語填填看 - 益智字詞大挑戰</title>
+  
+  <!-- Google Fonts: 繁體中文字型 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'sans-serif'],
+            serif: ['"Noto Serif TC"', 'serif'],
+          },
+          colors: {
+            brand: {
+              gold: '#F59E0B',
+              jade: '#10B981',
+              crimson: '#EF4444',
+              neon: '#06B6D4',
+              dark: '#0B0F19',
+              card: '#161F30',
+            }
+          },
+          boxShadow: {
+            'glow-gold': '0 0 25px rgba(245, 158, 11, 0.45)',
+            'glow-jade': '0 0 25px rgba(16, 185, 129, 0.45)',
+            'glow-neon': '0 0 25px rgba(6, 182, 212, 0.45)',
+            'glow-crimson': '0 0 25px rgba(239, 68, 68, 0.45)',
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-short': 'bounceShort 0.5s ease-in-out',
+            'shake': 'shake 0.4s ease-in-out',
+            'float': 'float 3s ease-in-out infinite',
+          },
+          keyframes: {
+            bounceShort: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.08)' },
+            },
+            shake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '20%, 60%': { transform: 'translateX(-8px)' },
+              '40%, 80%': { transform: 'translateX(8px)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* 煙火與粒子畫布層 */
+    #celebration-canvas {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 50;
+    }
+    
+    /* 隱藏滾動條但保留功能 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-[#070A12] text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-brand-neon selection:text-black overflow-x-hidden relative"
+      x-data="idiomGameApp()"
+      x-init="initAudio(); initKeyboard();">
+
+  <!-- 慶祝特效 Canvas -->
+  <canvas id="celebration-canvas"></canvas>
+
+  <!-- 背景氛圍裝飾光球 -->
+  <div class="fixed top-[-10%] left-[-10%] w-[45vw] h-[45vw] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-amber-500/10 blur-[130px] pointer-events-none"></div>
+
+  <!-- 頂部導航列 -->
+  <header class="w-full border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-4 py-3 sm:px-8">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-black font-black text-lg shadow-glow-gold">
+          成
+        </span>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-wider font-serif bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-100 bg-clip-text text-transparent">
+            成語填填看
+          </h1>
+          <p class="text-[11px] text-slate-400 hidden sm:block">四字成語益智挑戰 ‧ 經典語文實力檢定</p>
+        </div>
+      </div>
+
+      <!-- 控制按鈕區 (返回首頁 / 靜音開關 / 放棄本局) -->
+      <div class="flex items-center space-x-2">
+        <!-- 返回首頁按鈕 -->
+        <a href="../index.html"
+           class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-800/80 hover:bg-slate-700 hover:text-amber-300 text-slate-300 border border-slate-700/60 active:scale-95 transition flex items-center space-x-1"
+           title="返回遊戲大廳首頁">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span class="hidden sm:inline">大廳首頁</span>
+        </a>
+
+        <button @click="toggleSound()"
+                class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition border border-slate-700/60 text-slate-300 hover:text-white"
+                :title="isMuted ? '開啟音效' : '靜音模式'"
+                aria-label="切換音效">
+          <!-- 音效圖示 -->
+          <template x-if="!isMuted">
+            <svg class="w-5 h-5 text-brand-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            </svg>
+          </template>
+          <template x-if="isMuted">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+            </svg>
+          </template>
+        </button>
+
+        <template x-if="gameState === 'playing'">
+          <button @click="confirmQuit()"
+                  class="px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 text-slate-300 border border-slate-700/60 active:scale-95 transition">
+            放棄本局
+          </button>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主畫面區域 -->
+  <main class="flex-grow flex items-center justify-center p-4 sm:p-6 w-full max-w-4xl mx-auto z-10">
+
+    <!-- 1. 遊戲啟動畫面 (遊戲說明) -->
+    <section x-show="gameState === 'start'"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="w-full max-w-xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-700/60 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+      
+      <div class="absolute -top-16 -right-16 w-44 h-44 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- 標題與形象標章 -->
+      <div class="text-center space-y-3 mb-8">
+        <div class="inline-block p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 animate-float">
+          <span class="text-4xl">📜</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-wider font-serif bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-200 bg-clip-text text-transparent">
+          成語填填看
+        </h2>
+        <p class="text-slate-400 text-sm">考驗字彙反應力，突破國學常識關卡！</p>
+      </div>
+
+      <!-- 遊戲規則說明清單 -->
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 sm:p-6 space-y-4 mb-8 text-sm">
+        <h3 class="text-amber-400 font-bold flex items-center text-base">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+          遊戲規則說明
+        </h3>
+        <ul class="space-y-3 text-slate-300 leading-relaxed">
+          <li class="flex items-start">
+            <span class="inline-block w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold text-center leading-5 mr-3 shrink-0">1</span>
+            <span>每局隨機抽取 <strong>10 題</strong> 四字成語，隨機隱藏其中一個關鍵字。</span>
+          </li>
+          <li class="flex items-start">
+            <span class="inline-block w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold text-center leading-5 mr-3 shrink-0">2</span>
+            <span>自 <strong>4 個候選字</strong> 中選出正解（可滑鼠點選或鍵盤按 1/2/3/4 或 A/B/C/D 快捷作答）。</span>
+          </li>
+          <li class="flex items-start">
+            <span class="inline-block w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold text-center leading-5 mr-3 shrink-0">3</span>
+            <span>每題享有 <strong>12 秒倒數計時</strong>（上方為時間倒數條，下方為關卡題目進度條，雙血條獨立呈現）。</span>
+          </li>
+          <li class="flex items-start">
+            <span class="inline-block w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold text-center leading-5 mr-3 shrink-0">4</span>
+            <span>答對即觸發祝賀微動效，每題得 <strong>10 分</strong>（滿分 100 分）；答錯彈窗展示成語釋義後繼續下一題。</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 開始遊戲按鈕 -->
+      <button @click="startGame()"
+              class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black text-lg tracking-widest shadow-glow-gold hover:brightness-110 active:scale-[0.98] transition-all duration-200 flex items-center justify-center group">
+        <span>進入挑戰</span>
+        <svg class="w-6 h-6 ml-2 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+      </button>
+    </section>
+
+
+    <!-- 2. 遊戲進行主畫面 -->
+    <section x-show="gameState === 'playing'"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="w-full max-w-2xl bg-slate-900/90 border border-slate-700/60 rounded-3xl p-5 sm:p-8 shadow-2xl backdrop-blur-xl relative">
+
+      <!-- 雙血條區塊：時間血條 (Time Gauge) + 答題進度血條 (Progress Gauge) -->
+      <div class="space-y-4 mb-6">
+        
+        <!-- (1) 時間血條：黃/紅倒數條 -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-semibold mb-1.5">
+            <span class="flex items-center text-slate-300">
+              <svg class="w-4 h-4 mr-1 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              剩餘時間
+            </span>
+            <span :class="timeLeft <= 3 ? 'text-rose-400 font-black text-sm animate-pulse-fast' : 'text-amber-400 font-mono text-sm'"
+                  x-text="timeLeft.toFixed(1) + ' 秒'">
+            </span>
+          </div>
+          <!-- 時間進度軌道 -->
+          <div class="w-full h-3 rounded-full bg-slate-800/90 p-[2px] border border-slate-700/60 overflow-hidden shadow-inner">
+            <div class="h-full rounded-full transition-all duration-100 ease-linear shadow-sm"
+                 :class="timeLeft > 6 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : (timeLeft > 3 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-rose-600 to-red-400 shadow-glow-crimson')"
+                 :style="`width: ${(timeLeft / maxTime) * 100}%`">
+            </div>
+          </div>
+        </div>
+
+        <!-- (2) 題目進度血條 (Progress Gauge)：藍霓虹風格，與時間血條顯著區分 -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-semibold mb-1.5">
+            <span class="flex items-center text-cyan-400">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              闖關進度（第 <span x-text="currentIndex + 1"></span> / 10 題）
+            </span>
+            <span class="text-cyan-300 font-mono text-xs">
+              目前得分：<strong class="text-amber-400 text-sm font-bold" x-text="score"></strong> 分
+            </span>
+          </div>
+          <!-- 答題進度能量槽 -->
+          <div class="w-full h-2.5 rounded-full bg-slate-800 p-[2px] border border-cyan-500/30 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-500 transition-all duration-300 shadow-glow-neon"
+                 :style="`width: ${((currentIndex + (isAnswerEvaluated ? 1 : 0)) / totalQuestions) * 100}%`">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 成語填空展示卡片 -->
+      <div class="bg-gradient-to-b from-slate-950/80 to-slate-900/90 border border-slate-700/70 rounded-2xl p-6 sm:p-8 mb-6 text-center shadow-lg relative"
+           :class="isCelebrating ? 'animate-bounce-short ring-2 ring-emerald-400/50' : (isWrongShaking ? 'animate-shake ring-2 ring-rose-500/50' : '')">
+        
+        <div class="text-xs uppercase tracking-widest text-slate-400 font-mono mb-4">
+          IDIOM PUZZLE #<span x-text="currentIndex + 1"></span>
+        </div>
+
+        <!-- 成語四字卡片盒 -->
+        <div class="flex justify-center items-center gap-2 sm:gap-4 my-2">
+          <template x-for="(char, idx) in currentQuestionChars" :key="idx">
+            <div class="w-14 h-16 sm:w-20 sm:h-24 rounded-2xl flex items-center justify-center font-serif text-2xl sm:text-4xl font-black transition-all duration-200 select-none"
+                 :class="idx === currentBlankIndex 
+                   ? (selectedAnswer 
+                       ? (isAnswerCorrect ? 'bg-emerald-500/20 text-emerald-300 border-2 border-emerald-400 shadow-glow-jade scale-105' : 'bg-rose-500/20 text-rose-300 border-2 border-rose-400 shadow-glow-crimson') 
+                       : 'bg-amber-500/10 border-2 border-dashed border-amber-400/80 text-amber-400 animate-pulse') 
+                   : 'bg-slate-800/90 border border-slate-700 text-slate-100 shadow-md'">
+              
+              <!-- 隱藏字格或已知字 -->
+              <span x-text="idx === currentBlankIndex ? (selectedAnswer ? selectedAnswer : '？') : char"></span>
+            </div>
+          </template>
+        </div>
+
+        <!-- 成語語意提要/拼音提要 -->
+        <div class="mt-4 text-xs sm:text-sm text-slate-400 tracking-wide font-normal">
+          成語釋義提示：<span class="text-slate-300 font-medium" x-text="currentIdiom ? currentIdiom.hint : ''"></span>
+        </div>
+      </div>
+
+      <!-- 四個候選字按鈕區塊 -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-4">
+        <template x-for="(opt, optIdx) in currentOptions" :key="optIdx">
+          <button @click="selectOption(opt)"
+                  :disabled="isProcessing"
+                  class="group relative py-4 px-4 sm:px-6 rounded-2xl font-serif text-xl sm:text-2xl font-black transition-all duration-150 flex items-center justify-between border active:scale-95 disabled:pointer-events-none disabled:opacity-70"
+                  :class="getOptionButtonClass(opt)">
+            
+            <!-- 選項序號快捷鍵標籤 -->
+            <span class="w-6 h-6 rounded-lg text-xs font-sans font-bold flex items-center justify-center transition"
+                  :class="selectedAnswer === opt 
+                    ? (isAnswerCorrect ? 'bg-emerald-400 text-slate-950' : 'bg-rose-400 text-slate-950') 
+                    : 'bg-slate-800 text-slate-400 group-hover:bg-amber-400 group-hover:text-slate-950'"
+                  x-text="['A', 'B', 'C', 'D'][optIdx]">
+            </span>
+
+            <!-- 候選中文字 -->
+            <span class="flex-grow text-center text-2xl sm:text-3xl" x-text="opt"></span>
+
+            <!-- 回饋小標誌 -->
+            <div class="w-6 h-6 flex items-center justify-center">
+              <template x-if="selectedAnswer === opt && isAnswerCorrect">
+                <svg class="w-5 h-5 text-emerald-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+              </template>
+              <template x-if="selectedAnswer === opt && !isAnswerCorrect">
+                <svg class="w-5 h-5 text-rose-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </template>
+            </div>
+          </button>
+        </template>
+      </div>
+
+      <!-- 鍵盤操作提示 -->
+      <div class="mt-4 text-center text-slate-500 text-xs hidden sm:block">
+        小撇步：可使用鍵盤數字鍵 <span class="text-slate-400 font-mono font-bold">1 ~ 4</span> 或字母鍵 <span class="text-slate-400 font-mono font-bold">A ~ D</span> 快速作答！
+      </div>
+    </section>
+
+
+    <!-- 3. 結算畫面 (遊戲結束) -->
+    <section x-show="gameState === 'ended'"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="w-full max-w-xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700/60 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl relative">
+      
+      <!-- 成果頂端標章 -->
+      <div class="text-center space-y-2 mb-6">
+        <div class="inline-block p-4 rounded-full border shadow-xl mb-1"
+             :class="score >= 90 ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-glow-gold' : (score >= 60 ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-glow-neon' : 'bg-slate-800 border-slate-700 text-slate-400')">
+          <span class="text-5xl" x-text="score >= 90 ? '👑' : (score >= 60 ? '🎖️' : '📚')"></span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold font-serif text-slate-100" x-text="getEvaluationTitle()"></h2>
+        <p class="text-slate-400 text-sm" x-text="getEvaluationSubtitle()"></p>
+      </div>
+
+      <!-- 得分大字框 -->
+      <div class="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-6 text-center mb-6">
+        <div class="text-xs uppercase tracking-widest text-slate-400 mb-1">最終成績結算</div>
+        <div class="flex items-baseline justify-center space-x-2">
+          <span class="text-6xl sm:text-7xl font-black font-serif tracking-tight"
+                :class="score >= 80 ? 'text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : (score >= 60 ? 'text-cyan-400' : 'text-slate-200')"
+                x-text="score"></span>
+          <span class="text-2xl text-slate-400 font-bold">/ 100 分</span>
+        </div>
+
+        <!-- 數據統計清單 -->
+        <div class="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-slate-700/50 text-center">
+          <div class="p-2">
+            <div class="text-[11px] text-slate-400">答對題數</div>
+            <div class="text-lg font-bold text-emerald-400" x-text="`${correctCount} / 10`"></div>
+          </div>
+          <div class="p-2">
+            <div class="text-[11px] text-slate-400">答題正確率</div>
+            <div class="text-lg font-bold text-cyan-400" x-text="`${Math.round((correctCount / 10) * 100)}%`"></div>
+          </div>
+          <div class="p-2">
+            <div class="text-[11px] text-slate-400">最高連擊</div>
+            <div class="text-lg font-bold text-amber-400" x-text="maxCombo"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 本局成語複習展開清單 -->
+      <div class="mb-6">
+        <details class="group bg-slate-800/40 border border-slate-700/60 rounded-xl overflow-hidden">
+          <summary class="p-3.5 text-xs sm:text-sm text-slate-300 font-semibold cursor-pointer select-none flex justify-between items-center hover:bg-slate-800/70">
+            <span>📖 查看本局 10 題成語典故與釋義</span>
+            <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-3 max-h-48 overflow-y-auto space-y-2 border-t border-slate-700/40 text-xs">
+            <template x-for="(item, i) in gameQuestions" :key="i">
+              <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
+                <div class="font-serif font-bold text-amber-300 text-sm mb-0.5" x-text="`${i + 1}. 【${item.idiom}】`"></div>
+                <div class="text-slate-300 leading-relaxed" x-text="item.hint"></div>
+              </div>
+            </template>
+          </div>
+        </details>
+      </div>
+
+      <!-- 操作按鈕：再玩一次 / 返回遊戲大廳 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button @click="startGame()"
+                class="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-base sm:text-lg tracking-widest shadow-glow-gold hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span>再次挑戰</span>
+        </button>
+
+        <a href="../index.html"
+           class="w-full py-4 px-5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-base sm:text-lg tracking-wider border border-slate-600/80 active:scale-[0.98] transition-all flex items-center justify-center group">
+          <svg class="w-5 h-5 mr-2 text-amber-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span>返回大廳首頁</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- 4. 答錯彈出視窗 (Modal)：顯示正確答案與成語釋義，短暫停留後自動關閉 -->
+  <div x-show="showWrongModal"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+       style="display: none;">
+    
+    <div class="w-full max-w-md bg-gradient-to-b from-slate-900 to-slate-950 border border-rose-500/40 rounded-3xl p-6 sm:p-7 shadow-glow-crimson transform transition-all text-center relative overflow-hidden animate-shake">
+      
+      <!-- 頂部警示裝飾 -->
+      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center text-3xl font-black">
+        ✕
+      </div>
+
+      <h3 class="text-xl sm:text-2xl font-bold font-serif text-rose-400 mb-1" x-text="wrongReasonText"></h3>
+      <p class="text-xs text-slate-400 mb-5">請記住正確字詞與典故涵義</p>
+
+      <!-- 正確答案亮顯卡 -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 mb-4">
+        <div class="text-xs text-slate-400 mb-1">完整成語與正解字</div>
+        <div class="font-serif text-3xl sm:text-4xl font-black tracking-widest text-emerald-400 mb-2">
+          <template x-for="(char, cIdx) in (currentIdiom ? currentIdiom.word.split('') : [])" :key="cIdx">
+            <span :class="cIdx === currentBlankIndex ? 'text-amber-300 underline underline-offset-8 decoration-amber-400' : 'text-slate-100'"
+                  x-text="char">
+            </span>
+          </template>
+        </div>
+        <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+          正解填空字：<span class="text-amber-300 font-bold text-sm" x-text="currentCorrectChar"></span>
+        </div>
+      </div>
+
+      <!-- 成語詳細釋義 -->
+      <div class="text-left bg-slate-950/60 rounded-xl p-3.5 border border-slate-800 text-xs text-slate-300 leading-relaxed mb-5">
+        <div class="text-amber-400 font-semibold mb-1">釋義簡介：</div>
+        <p x-text="currentIdiom ? currentIdiom.hint : ''"></p>
+      </div>
+
+      <!-- 自動倒數關閉進度條 -->
+      <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
+        <span>即將進入下一題...</span>
+        <button @click="dismissWrongModalImmediately()" class="text-cyan-400 hover:underline">立即跳過 ➔</button>
+      </div>
+      <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+        <div class="h-full bg-rose-500 transition-all duration-100 ease-linear"
+             :style="`width: ${(wrongModalTimer / wrongModalMaxDuration) * 100}%`">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- 頁尾宣告與版權 -->
+  <footer class="w-full border-t border-slate-800/60 py-3 text-center text-xs text-slate-500 z-10">
+    <span>成語填填看 ‧ 經典繁體中文益智系列 ‧ 純純網頁即開即玩</span>
+  </footer>
+
+  <!-- ==================== 核心 JavaScript 邏輯 ==================== -->
+  <script>
+    // 1. 成語題庫資料庫（涵蓋常見字、易錯字、字義豐富）
+    const IDIOM_DATABASE = [
+      { word: "一鳴驚人", hint: "比喻平時默默無聞，突然做出驚人成績。", distractors: ["明", "名", "鳴", "鳴"] },
+      { word: "畫龍點睛", hint: "比喻在關鍵處加上精闢字句，使內容更生動有力。", distractors: ["睛", "精", "金", "晴"] },
+      { word: "守株待兔", hint: "比喻不知變通，妄想不勞而獲。", distractors: ["朱", "珠", "株", "蛛"] },
+      { word: "亡羊補牢", hint: "比喻犯錯或受損後及時補救，尚能防患未然。", distractors: ["王", "忘", "亡", "網"] },
+      { word: "胸有成竹", hint: "比喻做事前已有了全面成熟的打算或主見。", distractors: ["成", "誠", "城", "承"] },
+      { word: "井底之蛙", hint: "比喻見識狹隘、目光短淺的人。", distractors: ["娃", "哇", "蛙", "窪"] },
+      { word: "狐假虎威", hint: "比喻藉著別人的權勢威風來恐嚇或欺壓他人。", distractors: ["假", "甲", "賈", "駕"] },
+      { word: "掩耳盜鈴", hint: "比喻自欺欺人，以為自己不知道別人就看不出。", distractors: ["盜", "導", "道", "倒"] },
+      { word: "破釜沉舟", hint: "比喻下定決心，不留退路，奮勇力戰到底。", distractors: ["釜", "父", "斧", "俯"] },
+      { word: "水落石出", hint: "比喻事情的真相完全顯露出來。", distractors: ["落", "洛", "駱", "絡"] },
+      { word: "臥薪嘗膽", hint: "比喻刻苦自勵，發憤圖強以謀復仇雪恥。", distractors: ["嘗", "常", "償", "長"] },
+      { word: "名列前茅", hint: "比喻成績或名次排在最前面。", distractors: ["茅", "矛", "毛", "錨"] },
+      { word: "拋磚引玉", hint: "比喻謙稱用自己粗淺的見解引出他人高明的意見。", distractors: ["磚", "專", "轉", "鑽"] },
+      { word: "按圖索驥", hint: "比喻按照線索尋求，亦形容辦事不知變通。", distractors: ["驥", "冀", "計", "忌"] },
+      { word: "杯弓蛇影", hint: "比喻疑神疑鬼，自己嚇自己。", distractors: ["弓", "公", "功", "工"] },
+      { word: "集思廣益", hint: "指集合眾人智慧，廣泛吸收有益的意見以求完備。", distractors: ["益", "意", "溢", "異"] },
+      { word: "刻舟求劍", hint: "比喻拘泥成法，不知道隨情勢變化而變通。", distractors: ["劍", "鑑", "漸", "見"] },
+      { word: "拔苗助長", hint: "比喻違反事物發展客觀規律，急於求成反壞了事。", distractors: ["助", "著", "祝", "鑄"] },
+      { word: "盲人摸象", hint: "比喻看問題以偏概全，未能掌握客觀全貌。", distractors: ["象", "相", "向", "橡"] },
+      { word: "同舟共濟", hint: "比喻大家同心協力，共同克服難關。", distractors: ["濟", "既", "記", "際"] },
+      { word: "紙上談兵", hint: "比喻只空談理論，不能解決實際問題。", distractors: ["談", "潭", "壇", "譚"] },
+      { word: "迎刃而解", hint: "比喻主要問題解決後，其他相關問題便很容易處理解決。", distractors: ["刃", "認", "任", "韌"] },
+      { word: "絡繹不絕", hint: "形容行人、車馬連續往來，接連不斷。", distractors: ["繹", "譯", "驛", "奕"] },
+      { word: "滄海一粟", hint: "比喻人在天地之間極其渺小。", distractors: ["粟", "栗", "粒", "力"] },
+      { word: "迫不及待", hint: "形容心情非常急切，無法等待。", distractors: ["及", "急", "即", "極"] },
+      { word: "鋌而走險", hint: "在走投無路時冒著危險行動。", distractors: ["鋌", "艇", "挺", "庭"] },
+      { word: "再接再厲", hint: "比喻勇往直前，更加努力奮勇。", distractors: ["厲", "勵", "歷", "立"] },
+      { word: "膾炙人口", hint: "比喻美妙的詩文或事物受到眾人的喜愛稱讚。", distractors: ["膾", "快", "會", "繪"] },
+      { word: "趨之若鶩", hint: "形容前往爭相追逐的人非常多。", distractors: ["鶩", "騖", "誤", "霧"] },
+      { word: "如雷貫耳", hint: "形容名氣非常大，聲名遠播。", distractors: ["貫", "冠", "慣", "灌"] }
+    ];
+
+    // 常用中文混淆字字庫（用以補充動態生成候選字）
+    const COMMON_CONFUSERS = [
+      "理", "禮", "力", "利", "歷", "勵", "厲", "至", "志", "致", "智", 
+      "心", "新", "欣", "星", "興", "行", "形", "意", "義", "益", "異",
+      "道", "倒", "導", "島", "生", "聲", "升", "昇", "得", "德", "地",
+      "天", "添", "田", "填", "風", "豐", "峰", "鋒", "金", "今", "津"
+    ];
+
+    // 2. Web Audio API 音效引擎（符合系統規格：無外部 mp3 依賴）
+    let audioCtx = null;
+    let isGlobalMuted = false;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // 預留音效播放函數 PlaySound(type)
+    function PlaySound(type) {
+      if (isGlobalMuted) return;
+      initAudioContext();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+
+      switch (type) {
+        case 'click': {
+          // 清脆按鍵點擊音效
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.05);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+          break;
+        }
+
+        case 'correct': {
+          // 答對慶祝三和弦微動音 (C-E-G-C 高音揚升)
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const startTime = now + idx * 0.08;
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0.25, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.36);
+          });
+          break;
+        }
+
+        case 'wrong': {
+          // 答錯低頻低沉警告聲
+          const osc1 = audioCtx.createOscillator();
+          const osc2 = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc1.type = 'sawtooth';
+          osc2.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(160, now);
+          osc1.frequency.exponentialRampToValueAtTime(90, now + 0.28);
+          osc2.frequency.setValueAtTime(155, now);
+          osc2.frequency.exponentialRampToValueAtTime(85, now + 0.28);
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.3);
+          osc2.stop(now + 0.3);
+          break;
+        }
+
+        case 'timeout': {
+          // 時間到警示嗶嗶聲
+          for (let i = 0; i < 2; i++) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const startTime = now + i * 0.12;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(320, startTime);
+            gain.gain.setValueAtTime(0.2, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.1);
+          }
+          break;
+        }
+
+        case 'tick': {
+          // 最後 3 秒急促心跳/倒數時鐘滴答聲
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+          break;
+        }
+
+        case 'gameover': {
+          // 遊戲完成結算華麗和弦
+          const chords = [392.00, 523.25, 659.25, 783.99, 1046.50];
+          chords.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const startTime = now + idx * 0.1;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.25, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.6);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.62);
+          });
+          break;
+        }
+      }
+    }
+
+    // 3. 畫布粒子煙火慶祝特效引擎
+    let confettiParticles = [];
+    let canvasAnimId = null;
+
+    function triggerConfettiCelebration() {
+      const canvas = document.getElementById('celebration-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // 產生 55~70 顆繽紛慶祝亮片
+      const colors = ['#F59E0B', '#10B981', '#06B6D4', '#EC4899', '#8B5CF6', '#FBBF24', '#FFFFFF'];
+      confettiParticles = [];
+      const particleCount = 65;
+
+      for (let i = 0; i < particleCount; i++) {
+        confettiParticles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+          y: canvas.height * 0.45 + (Math.random() - 0.5) * 80,
+          vx: (Math.random() - 0.5) * 14,
+          vy: (Math.random() * -12) - 4,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 12,
+          gravity: 0.35,
+          opacity: 1,
+          decay: Math.random() * 0.015 + 0.01
+        });
+      }
+
+      if (canvasAnimId) cancelAnimationFrame(canvasAnimId);
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let activeCount = 0;
+
+        for (let p of confettiParticles) {
+          if (p.opacity > 0) {
+            activeCount++;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.vx *= 0.98;
+            p.rotation += p.rotSpeed;
+            p.opacity -= p.decay;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = Math.max(0, p.opacity);
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+          }
+        }
+
+        if (activeCount > 0) {
+          canvasAnimId = requestAnimationFrame(render);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          canvasAnimId = null;
+        }
+      }
+      render();
+    }
+
+    // 4. Alpine.js 遊戲應用狀態與核心控制器
+    function idiomGameApp() {
+      return {
+        // 狀態管理
+        gameState: 'start', // 'start' | 'playing' | 'ended'
+        isMuted: false,
+        totalQuestions: 10,
+        gameQuestions: [],
+        currentIndex: 0,
+        score: 0,
+        correctCount: 0,
+        currentCombo: 0,
+        maxCombo: 0,
+
+        // 每題計時器變數
+        maxTime: 12.0,
+        timeLeft: 12.0,
+        timerInterval: null,
+        lastTickSecond: 0,
+
+        // 當前題目細節
+        currentIdiom: null,
+        currentBlankIndex: 0,
+        currentCorrectChar: '',
+        currentQuestionChars: ['', '', '', ''],
+        currentOptions: [],
+        selectedAnswer: null,
+
+        // 動畫與防呆旗標
+        isProcessing: false,
+        isCelebrating: false,
+        isWrongShaking: false,
+        isAnswerEvaluated: false,
+
+        // 答錯彈窗狀態
+        showWrongModal: false,
+        wrongReasonText: '作答錯誤',
+        wrongModalTimer: 0,
+        wrongModalMaxDuration: 2200, // 2.2 秒自動關閉
+        wrongModalInterval: null,
+
+        // 初始化
+        initAudio() {
+          isGlobalMuted = this.isMuted;
+        },
+
+        initKeyboard() {
+          window.addEventListener('keydown', (e) => {
+            if (this.gameState !== 'playing' || this.isProcessing) return;
+            const key = e.key.toUpperCase();
+            const keyMap = { '1': 0, 'A': 0, '2': 1, 'B': 1, '3': 2, 'C': 2, '4': 3, 'D': 3 };
+            if (keyMap.hasOwnProperty(key)) {
+              const optIndex = keyMap[key];
+              if (this.currentOptions[optIndex]) {
+                this.selectOption(this.currentOptions[optIndex]);
+              }
+            }
+          });
+        },
+
+        toggleSound() {
+          this.isMuted = !this.isMuted;
+          isGlobalMuted = this.isMuted;
+          if (!this.isMuted) PlaySound('click');
+        },
+
+        confirmQuit() {
+          if (confirm('確定要放棄本局遊戲並返回主選單嗎？')) {
+            this.stopTimer();
+            this.clearWrongModalTimer();
+            this.gameState = 'start';
+            PlaySound('click');
+          }
+        },
+
+        // 開始新遊戲
+        startGame() {
+          PlaySound('click');
+          this.clearWrongModalTimer();
+          this.score = 0;
+          this.correctCount = 0;
+          this.currentCombo = 0;
+          this.maxCombo = 0;
+          this.currentIndex = 0;
+
+          // 隨機抽取 10 個不重複的成語
+          const shuffledPool = [...IDIOM_DATABASE].sort(() => Math.random() - 0.5);
+          this.gameQuestions = shuffledPool.slice(0, this.totalQuestions);
+
+          this.gameState = 'playing';
+          this.loadQuestion(0);
+        },
+
+        // 載入指定題目
+        loadQuestion(index) {
+          this.currentIndex = index;
+          this.isProcessing = false;
+          this.isCelebrating = false;
+          this.isWrongShaking = false;
+          this.isAnswerEvaluated = false;
+          this.selectedAnswer = null;
+
+          const item = this.gameQuestions[index];
+          this.currentIdiom = item;
+
+          // 隨機指定隱藏 4 個字中的其中 1 個 (0 ~ 3)
+          this.currentBlankIndex = Math.floor(Math.random() * 4);
+          const chars = item.word.split('');
+          this.currentCorrectChar = chars[this.currentBlankIndex];
+
+          // 構建顯示陣列（已知字正常，空格字為空）
+          this.currentQuestionChars = chars;
+
+          // 生成 4 個選項：包含 1 正確字 + 3 干擾字
+          this.generateOptions(item, this.currentCorrectChar);
+
+          // 啟動倒數計時
+          this.startTimer();
+        },
+
+        // 生成候選字選項
+        generateOptions(item, correctChar) {
+          const pool = new Set();
+          pool.add(correctChar);
+
+          // 優先自該成語專屬混淆字取
+          if (item.distractors && item.distractors.length) {
+            item.distractors.forEach(d => {
+              if (d !== correctChar && pool.size < 4) pool.add(d);
+            });
+          }
+
+          // 若不足 4 個，從常用形音相近字庫隨機填充
+          const shuffledConfusers = [...COMMON_CONFUSERS].sort(() => Math.random() - 0.5);
+          for (let char of shuffledConfusers) {
+            if (pool.size >= 4) break;
+            if (char !== correctChar) pool.add(char);
+          }
+
+          // 打亂順序並指派
+          this.currentOptions = Array.from(pool).sort(() => Math.random() - 0.5);
+        },
+
+        // 倒數計時器
+        startTimer() {
+          this.stopTimer();
+          this.timeLeft = this.maxTime;
+          this.lastTickSecond = Math.ceil(this.maxTime);
+          const intervalStep = 100; // 每 100ms 更新一次
+
+          this.timerInterval = setInterval(() => {
+            this.timeLeft = Math.max(0, this.timeLeft - 0.1);
+
+            // 當剩餘 3 秒內時，每秒播放提示音效
+            const currentSecond = Math.ceil(this.timeLeft);
+            if (currentSecond <= 3 && currentSecond > 0 && currentSecond !== this.lastTickSecond) {
+              this.lastTickSecond = currentSecond;
+              PlaySound('tick');
+            }
+
+            // 超時判定
+            if (this.timeLeft <= 0) {
+              this.stopTimer();
+              this.handleTimeout();
+            }
+          }, intervalStep);
+        },
+
+        stopTimer() {
+          if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+          }
+        },
+
+        // 玩家點擊選項作答
+        selectOption(opt) {
+          if (this.isProcessing) return;
+          this.isProcessing = true;
+          this.stopTimer();
+          this.selectedAnswer = opt;
+          this.isAnswerEvaluated = true;
+
+          const isCorrect = (opt === this.currentCorrectChar);
+
+          if (isCorrect) {
+            this.handleCorrectAnswer();
+          } else {
+            this.handleWrongAnswer('作答錯誤！');
+          }
+        },
+
+        // 答對處理
+        handleCorrectAnswer() {
+          PlaySound('correct');
+          this.isCelebrating = true;
+          triggerConfettiCelebration();
+
+          this.score += 10;
+          this.correctCount++;
+          this.currentCombo++;
+          if (this.currentCombo > this.maxCombo) {
+            this.maxCombo = this.currentCombo;
+          }
+
+          // 短暫慶祝動畫停留後自動進入下一題
+          setTimeout(() => {
+            this.advanceNextQuestion();
+          }, 1100);
+        },
+
+        // 答錯處理
+        handleWrongAnswer(reasonText) {
+          PlaySound('wrong');
+          this.isWrongShaking = true;
+          this.currentCombo = 0;
+          this.wrongReasonText = reasonText;
+
+          // 彈出視窗顯示正確答案與成語釋義
+          setTimeout(() => {
+            this.openWrongModal();
+          }, 450);
+        },
+
+        // 時間用盡超時處理
+        handleTimeout() {
+          if (this.isProcessing) return;
+          this.isProcessing = true;
+          PlaySound('timeout');
+          this.handleWrongAnswer('作答時間已用盡！');
+        },
+
+        // 彈出答錯說明視窗並倒數自動關閉
+        openWrongModal() {
+          this.showWrongModal = true;
+          this.wrongModalTimer = this.wrongModalMaxDuration;
+
+          const tick = 50;
+          this.wrongModalInterval = setInterval(() => {
+            this.wrongModalTimer = Math.max(0, this.wrongModalTimer - tick);
+            if (this.wrongModalTimer <= 0) {
+              this.dismissWrongModalImmediately();
+            }
+          }, tick);
+        },
+
+        dismissWrongModalImmediately() {
+          this.clearWrongModalTimer();
+          this.showWrongModal = false;
+          this.advanceNextQuestion();
+        },
+
+        clearWrongModalTimer() {
+          if (this.wrongModalInterval) {
+            clearInterval(this.wrongModalInterval);
+            this.wrongModalInterval = null;
+          }
+        },
+
+        // 推進至下一題或結算
+        advanceNextQuestion() {
+          if (this.currentIndex + 1 < this.totalQuestions) {
+            this.loadQuestion(this.currentIndex + 1);
+          } else {
+            this.endGame();
+          }
+        },
+
+        // 遊戲結算
+        endGame() {
+          this.stopTimer();
+          this.clearWrongModalTimer();
+          this.gameState = 'ended';
+          PlaySound('gameover');
+          if (this.score >= 80) {
+            triggerConfettiCelebration();
+          }
+        },
+
+        // 候選字按鈕樣式動態運算
+        getOptionButtonClass(opt) {
+          if (!this.selectedAnswer) {
+            return 'bg-slate-800/90 hover:bg-slate-750 hover:border-amber-400/80 hover:shadow-glow-gold border-slate-700/80 text-slate-100';
+          }
+          if (opt === this.selectedAnswer) {
+            if (opt === this.currentCorrectChar) {
+              return 'bg-emerald-500/25 border-emerald-400 text-emerald-300 shadow-glow-jade scale-[1.02]';
+            } else {
+              return 'bg-rose-500/25 border-rose-400 text-rose-300 shadow-glow-crimson';
+            }
+          }
+          if (opt === this.currentCorrectChar) {
+            return 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300';
+          }
+          return 'bg-slate-800/50 border-slate-800 text-slate-500 opacity-40';
+        },
+
+        // 計算評語稱號
+        getEvaluationTitle() {
+          if (this.score === 100) return '狀元及第 ‧ 登峰造極！';
+          if (this.score >= 80) return '博學多聞 ‧ 國學才子！';
+          if (this.score >= 60) return '字字珠璣 ‧ 實力堅強！';
+          return '再接再厲 ‧ 潛力無窮！';
+        },
+
+        getEvaluationSubtitle() {
+          if (this.score === 100) return '太厲害了！10 題成語全數通關無懈可擊！';
+          if (this.score >= 80) return '表現卓越！已具備深厚的國學造詣與反應力。';
+          if (this.score >= 60) return '順利及格！多加複習易錯字，下回必能勇奪滿分。';
+          return '別氣餒，成語典故多複習幾次，隨時歡迎重新挑戰！';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
